@@ -16,7 +16,7 @@ So we live in a world where the wiring is years ahead of our ability to use it. 
 
 Brooks missed free and open source software, which solved that crisis, enabling us to share knowledge efficiently. Today we face another software crisis, but it's one we don't talk about much. Only the largest, richest firms can afford to create connected applications. There is a cloud, but it's proprietary. Our data and our knowledge is disappearing from our personal computers into clouds that we cannot access and with which we cannot compete. Who owns our social networks? It is like the mainframe-PC revolution in reverse.
 
-We can leave the political philosophy [http://swsi.info for another book]. The point is that while the Internet offers the potential of massively connected code, the reality is that this is out of reach for most of us, and so large interesting problems (in health, education, economics, transport, and so on) remain unsolved because there is no way to connect the code, and thus no way to connect the brains that could work together to solve these problems.
+We can leave the political philosophy [http://cultureandempire.com for another book]. The point is that while the Internet offers the potential of massively connected code, the reality is that this is out of reach for most of us, and so large interesting problems (in health, education, economics, transport, and so on) remain unsolved because there is no way to connect the code, and thus no way to connect the brains that could work together to solve these problems.
 
 There have been many attempts to solve the challenge of connected code. There are thousands of IETF specifications, each solving part of the puzzle. For application developers, HTTP is perhaps the one solution to have been simple enough to work, but it arguably makes the problem worse by encouraging developers and architects to think in terms of big servers and thin, stupid clients.
 
@@ -44,7 +44,7 @@ Next, browse the examples subdirectory. You'll find examples by language. If the
 
 So let's start with some code. We start of course with a Hello World example. We'll make a client and a server. The client sends "Hello" to the server, which replies with "World"[figure]. Here's the server in C, which opens a ZeroMQ socket on port 5555, reads requests on it, and replies with "World" to each request:
 
-[[code type="example" title="Hello World server" name="hwserver" language="C"]]
+[[code type="example" title="Hello World server" name="hwserver"]]
 [[/code]]
 
 [[code type="textdiagram" title="Request-Reply"]]
@@ -78,6 +78,12 @@ You can see that the ZeroMQ API is similar in C and C++. In a language like PHP 
 [[/code]]
 
 [[code type="example" title="Hello World server" name="hwserver" language="Java"]]
+[[/code]]
+
+
+The server in other languages:
+
+[[code type="example" title="Hello World server" name="hwserver"]]
 [[/code]]
 
 Here's the client code:
@@ -136,7 +142,8 @@ s_recv (void *socket) {
         return NULL;
     if (size > 255)
         size = 255;
-    buffer [size] = 0;
+    buffer [size] = \0;
+    /* use strndup(buffer, sizeof(buffer)-1) in *nix */
     return strdup (buffer);
 }
 [[/code]]
@@ -249,7 +256,7 @@ sys     0m0.008s
             |    PUSH     |
             '------+------'
                    |
-                 tasks
+                   | tasks
                    |
       .------------+-------------.
       |            |             |
@@ -264,7 +271,7 @@ sys     0m0.008s
       |            |             |
       '------------+-------------'
                    |
-                results
+                   | results
                    |
                    v
             .-------------.
@@ -316,12 +323,12 @@ Let's look at some aspects of this code in more detail:
 |  PUSH   |   |  PUSH   |   |  PUSH   |
 '----+----'   '----+----'   '----+----'
      |             |             |
- R1, R2, R3       R4           R5, R6
+  R1,| R2, R3      | R4       R5,| R6
      |             |             |
      '-------------+-------------'
                    |
-             fair-queuing
-         R1, R4, R5, R2, R6, R3
+               fair| queuing
+        R1, R4, R5,| R2, R6, R3
                    |
                    v
             .-------------.
@@ -349,9 +356,9 @@ Having seen some examples, you must be eager to start using ZeroMQ in some apps.
 
 ZeroMQ applications always start by creating a //context//, and then using that for creating sockets. In C, it's the {{zmq_ctx_new[3]}} call. You should create and use exactly one context in your process. Technically, the context is the container for all sockets in a single process, and acts as the transport for {{inproc}} sockets, which are the fastest way to connect threads in one process. If at runtime a process has two contexts, these are like separate ZeroMQ instances. If that's explicitly what you want, OK, but otherwise remember:
 
-**Do one {{zmq_ctx_new[3]}} at the start of your main line code, and one {{zmq_ctx_destroy[3]}} at the end.**
+**Call {{zmq_ctx_new[3]}} once at the start of a process, and {{zmq_ctx_destroy[3]}} once at the end.**
 
-If you're using the {{fork()}} system call, each process needs its own context. If you do {{zmq_ctx_new[3]}} in the main process before calling {{fork()}}, the child processes get their own contexts. In general, you want to do the interesting stuff in the child processes and just manage these from the parent process.
+If you're using the {{fork()}} system call, do {{zmq_ctx_new[3]}} //after// the fork and at the beginning of the child process code. In general, you want to do interesting (ZeroMQ) stuff in the children, and boring process management in the parent.
 
 +++ Making a Clean Exit
 
@@ -423,7 +430,7 @@ It turns out that building reusable messaging systems is really difficult, which
 '------------'
       ^
       |
-     TCP
+      | TCP
       |
       v
 .------------.
@@ -556,7 +563,7 @@ These are the main areas of impact on applications and language bindings:
 
 +++ Suggested Shim Macros
 
-For applications that want to run on both v2.x and v3.2, such as language bindings, our advice is to emulate c3.2 as far as possible. Here are C macro definitions that help your C/C++ code to work across both versions (taken from [http://czmq.zeromq.org CZMQ]):
+For applications that want to run on both v2.x and v3.2, such as language bindings, our advice is to emulate v3.2 as far as possible. Here are C macro definitions that help your C/C++ code to work across both versions (taken from [http://czmq.zeromq.org CZMQ]):
 
 [[code type="fragment" name="upgrade-shim"]]
 #ifndef ZMQ_DONTWAIT

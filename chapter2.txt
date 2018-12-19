@@ -91,7 +91,7 @@ To send and receive messages you use the {{zmq_msg_send[3]}} and {{zmq_msg_recv[
 '------------'
       ^
       |
-   1 to 1
+      | 1 to 1
       |
       v
 .------------.
@@ -182,8 +182,8 @@ We looked at the first three of these in [#basics], and we'll see the exclusive 
 
 * PUB and SUB
 * REQ and REP
-* REQ and ROUTER
-* DEALER and REP
+* REQ and ROUTER (take care, REQ inserts an extra null frame)
+* DEALER and REP (take care, REP assumes a null frame)
 * DEALER and ROUTER
 * DEALER and DEALER
 * ROUTER and ROUTER
@@ -438,7 +438,7 @@ It's better to think of intermediaries as simple stateless message switches. A g
 #---------#   #---------#   #---------#
 [[/code]]
 
-We need XPUB and XSUB sockets because ZeroMQ does subscription forwarding from subscribers to publishers. XSUB and XPUB are exactly like SUB and PUB except they expose subscriptions as special messages. The proxy has to forward these subscription messages from subscriber side to publisher side, by reading them from the XSUB socket and writing them to the XPUB socket. This is the main use case for XSUB and XPUB[figure].
+We need XPUB and XSUB sockets because ZeroMQ does subscription forwarding from subscribers to publishers. XSUB and XPUB are exactly like SUB and PUB except they expose subscriptions as special messages. The proxy has to forward these subscription messages from subscriber side to publisher side, by reading them from the XPUB socket and writing them to the XSUB socket. This is the main use case for XSUB and XPUB[figure].
 
 +++ Shared Queue (DEALER and ROUTER sockets)
 
@@ -451,11 +451,11 @@ In the Hello World client/server application, we have one client that talks to o
              |    REQ    |
              '-----+-----'
                    |
-             R1, R2, R3, R4
+            R1, R2,| R3, R4
                    |
      .-------------+-------------.
      |             |             |
-  R1, R4           R2            R3
+ R1, | R4          | R2          | R3
      |             |             |
      v             v             v
 .---------.   .---------.   .---------.
@@ -588,8 +588,9 @@ A frequent request from ZeroMQ users is, "How do I connect my ZeroMQ network wit
 |Subscriber|   |Subscriber|   |  Proxy   |
 #----------#   #----------#   +----------+
                               |   XPUB   |
- Internal network             '-----+----'
-=---------------------------------- | -----------
+                              '-----+----'
+ Internal network                   |
+====================================+=============
  External network                  bind
                            tcp://10.1.1.0:8100
                                     |
@@ -656,32 +657,33 @@ In C/C++, asserts can be removed entirely in optimized code, so don't make the m
              +-------------+
              |    PUSH     |
              '------+------'
-                  tasks
+                    |
+                    | tasks
                     |
     .---------------+---------------.
     |               |               |
-    |     .--=------|-----+=--------|-----+---=--.
-    |     |         |     |         |     |      |
-    v     v         v     v         v     v      |
-.------+-----.  .------+-----.  .------+-----.   |
-| PULL | SUB |  | PULL | SUB |  | PULL | SUB |   |
-+------+-----+  +------+-----+  +------+-----+   |
-|   Worker   |  |   Worker   |  |   Worker   |   |
-+------------+  +------------+  +------------+   |
-|    PUSH    |  |    PUSH    |  |    PUSH    |   |
-'-----+------'  '-----+------'  '-----+------'   |
-      |               |               |          |
-      '---------------+---------------'          |
-                      |                          |
-                   results                       |
-                      |                          |
-                      v                          |
-               .-------------.                   |
-               |    PULL     |                   |
-               +-------------+                   |
-               |    Sink     |                   |
-               +-------------+                   |
-               |     PUB     +--=-KILL signal----'
+    |     .=========+=====+=========+=====+======.
+    |     :         |     :         |     :      :
+    v     v         v     v         v     v      :
+.------+-----.  .------+-----.  .------+-----.   :
+| PULL | SUB |  | PULL | SUB |  | PULL | SUB |   :
++------+-----+  +------+-----+  +------+-----+   :
+|   Worker   |  |   Worker   |  |   Worker   |   :
++------------+  +------------+  +------------+   :
+|    PUSH    |  |    PUSH    |  |    PUSH    |   :
+'-----+------'  '-----+------'  '-----+------'   :
+      |               |               |          :
+      '---------------+---------------'          :
+                      |                          :
+                      | results                  :
+                      |                          :
+                      v                          :
+               .-------------.                   :
+               |    PULL     |                   :
+               +-------------+                   :
+               |    Sink     |                   :
+               +-------------+                   :
+               |     PUB     +==== KILL signal==='
                '-------------'
 [[/code]]
 
@@ -690,7 +692,7 @@ Let's see how to shut down a process cleanly. We'll take the parallel pipeline e
 How do we connect the sink to the workers? The PUSH/PULL sockets are one-way only. We could switch to another socket type, or we could mix multiple socket flows. Let's try the latter: using a pub-sub model to send kill messages to the workers[figure]:
 
 * The sink creates a PUB socket on a new endpoint.
-* Workers bind their input socket to this endpoint.
+* Workers connect their input socket to this endpoint.
 * When the sink detects the end of the batch, it sends a kill to its PUB socket.
 * When a worker detects this kill message, it exits.
 
@@ -845,7 +847,7 @@ The MT version of the Hello World service basically collapses the broker and wor
                '---+--------'
                    |    ^
                    |    |
-              "Hello"  "World"
+           "Hello" |    | "World"
 .----------------= | -= | =----------------.
 |                  v    |                  :
 |              .--------+---.              |
@@ -901,7 +903,7 @@ Let's make three threads that signal each other when they are ready[figure]. In 
 |    PAIR    |
 '-----+------'
       |
-    Ready!
+      | Ready!
       |
       v
 .------------.
@@ -912,7 +914,7 @@ Let's make three threads that signal each other when they are ready[figure]. In 
 |    PAIR    |
 '-----+------'
       |
-    Ready!
+      | Ready!
       |
       v
 .------------.
@@ -952,8 +954,8 @@ When you want to coordinate a set of nodes on a network, PAIR sockets won't work
 | PUB | REP  |
 '--+--+----+-'
    |    ^  |
-  (3)   | (2)
-   |   (1) |
+(3)| (1)|  |(2)
+   |    |  |
    v    |  v
 .-----+-+----.
 | SUB | REQ  |
@@ -1049,7 +1051,7 @@ Frame 2   | Data   |   Actual message body
           #--------#
 [[/code]]
 
-Recall that subscriptions do a prefix match. That is, they look for "all messages starting with XYZ". The obvious question is: how to delimit keys from data so that the prefix match doesn't accidentally match data. The best answer is to use an envelope because the match won't cross a frame boundary. Here is a minimalist example of how pub-sub envelopes look in code. This publisher sends messages of two types, A and B.
+Subscriptions do a prefix match. That is, they look for "all messages starting with XYZ". The obvious question is: how to delimit keys from data so that the prefix match doesn't accidentally match data. The best answer is to use an envelope because the match won't cross a frame boundary. Here is a minimalist example of how pub-sub envelopes look in code. This publisher sends messages of two types, A and B.
 
 The envelope holds the message type:
 
@@ -1136,20 +1138,20 @@ As you build applications with ZeroMQ, you will come across this problem more th
 .-----------------.      '----------------'       | sockets       |
 |  Do you check   | No                            '---------------'
 | return codes on +---.   .----------------.
-|  all methods?   |   |   | Check each ZeroMQ |   .------------------.
+|  all methods?   |   |   | Check each 0MQ |   .------------------.
 '--------+--------'   '-->| method call    |   | Use sockets only |
          | Yes            '----------------'   | in their owning  |
          v                                     | threads unless   |
-.-----------------.      .---.         .------>| you know about   |
-| Are you using a |      |   |      .--'       | memory barriers  |
+.-----------------.      .---.      .--------->| you know about   |
+| Are you using a |      |   |      |          | memory barriers  |
 | socket in more  +------'   |      |          '------------------'
 | than 1 thread?  | Yes      '------'         
 '--------+--------'                               .---------------.
          | No             .----------------.      | To use inproc |
          v                | Do you call    |      | your sockets  |
 .---------------.   .---->| zmq_ctx_new    +----->| must be in    |
-| Are you using |   |     | twice or more? |Yes   | the same      |
-| the inproc:// +---'     '--------+-------'      | ZeroMQ context   |
+| Are you using |   |     | twice or more? | Yes  | the same 0MQ  |
+| the inproc:// +---'     '--------+-------'      | context       |
 | transport?    | Yes              | No           '---------------'
 '--------+------'                  v                              
          | No             .-----------------.
@@ -1161,7 +1163,7 @@ As you build applications with ZeroMQ, you will come across this problem more th
          | No         |   .----------------.     .------------.
          v            |   | Check that the |     | If you use |
 .----------------.    |   | reply address  |     | identities |
-| Make a minimal |    '-->| is valid. ZeroMQ  +---->| set them   |
+| Make a minimal |    '-->| is valid. 0MQ  +---->| set them   |
 | test case, ask |        | drops messages |     | before you |
 | on IRC channel |        | it can't route |     | connect    |
 '----------------'        '----------------'     '------------'

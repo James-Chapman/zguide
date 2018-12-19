@@ -22,7 +22,7 @@ def worker_thread(context=None):
 
     # We use a string identity for ease here
     zhelpers.set_id(worker)
-    worker.connect("ipc://routing.ipc")
+    worker.connect("tcp://localhost:5671")
 
     total = 0
     while True:
@@ -43,7 +43,7 @@ def worker_thread(context=None):
 
 context = zmq.Context.instance()
 client = context.socket(zmq.ROUTER)
-client.bind("ipc://routing.ipc")
+client.bind("tcp://*:5671")
 
 for _ in range(NBR_WORKERS):
     Thread(target=worker_thread).start()
@@ -51,7 +51,7 @@ for _ in range(NBR_WORKERS):
 for _ in range(NBR_WORKERS * 10):
     # LRU worker is next waiting in the queue
     address, empty, ready = client.recv_multipart()
-    
+
     client.send_multipart([
         address,
         b'',
@@ -66,4 +66,3 @@ for _ in range(NBR_WORKERS):
         b'',
         b'END',
     ])
-

@@ -17,3 +17,5 @@ book.xml
 book.tex
 upload.sh
 changes.txt
+*.swp
+testdata*

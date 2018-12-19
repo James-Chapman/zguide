@@ -3,6 +3,7 @@
 #  In which the server sends the entire file to the client in
 #  large chunks with no attempt at flow control.
 
+from __future__ import print_function
 from threading import Thread
 
 import zmq
@@ -37,14 +38,14 @@ def client_thread(ctx, pipe):
     print ("%i chunks received, %i bytes" % (chunks, total))
     pipe.send(b"OK")
 
-# .split File server thread
+# File server thread
 # The server thread reads the file from disk in chunks, and sends
 # each chunk to the client as a separate message. We only have one
 # test file, so open that once and then serve it out as needed:
 
 
 def server_thread(ctx):
-    file = open("testdata", "r")
+    file = open("testdata", "rb")
 
     router = ctx.socket(zmq.ROUTER)
 
@@ -73,7 +74,7 @@ def server_thread(ctx):
             if not data:
                 break
 
-# .split File main thread
+# File main thread
 # The main task starts the client and server threads; it's easier
 # to test this as a single process with threads, than as multiple
 # processes:
@@ -91,7 +92,7 @@ def main():
 
     # loop until client tells us it's done
     try:
-        print a.recv()
+        print (a.recv())
     except KeyboardInterrupt:
         pass
     del a,b

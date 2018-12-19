@@ -8,6 +8,7 @@
 //  Olivier Chamoux <olivier.chamoux@fr.thalesgroup.com>
 //
 #include "zhelpers.hpp"
+#include <string>
 
 int main (int argc, char *argv[])
 {
@@ -28,8 +29,9 @@ int main (int argc, char *argv[])
         int workload;           //  Workload in msecs
 
         receiver.recv(&message);
+        std::string smessage(static_cast<char*>(message.data()), message.size());
 
-        std::istringstream iss(static_cast<char*>(message.data()));
+        std::istringstream iss(smessage);
         iss >> workload;
 
         //  Do the work
@@ -40,7 +42,7 @@ int main (int argc, char *argv[])
         sender.send(message);
 
         //  Simple progress indicator for the viewer
-		std::cout << "." << std::flush;
+        std::cout << "." << std::flush;
     }
     return 0;
 }

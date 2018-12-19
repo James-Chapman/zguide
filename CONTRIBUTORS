@@ -6,6 +6,7 @@ Martin Sustrik <sutrik@imatix.com> (C++)
 Olivier Chamoux <olivier.chamoux@fr.thalesgroup.com> (C++)
 Naveen Chawla <naveen.chwl@gmail.com> (Java)
 Nicola Peduzzi <thenikso@gmail.com> (Java)
+Isa Hekmatizadeh <esa.hekmat@gmail.com> (Java)
 Hunter Ford <hunterford@gmail.com> (Python)
 Mike Castleman <m@mlcastle.net> (Ruby)
 Brian Dorsey <briandorsey@gmail.com> (Python)
@@ -101,6 +102,11 @@ Zaytsev Roman Borisovich <roman.zaytsev.borisovich@gmail.com> (C++)
 Trevor Bernard <trevor.bernard@gmail.com> (Clojure)
 ygrek <ygrek@autistici.org> (OCaml)
 Matthew Wraith <wraithm@gmail.com> (Haskell, OCaml)
+Pieter du Preez <pdupreez@gmail.com> (C, Java, Python, Ruby)
+David Hauri <chubbson@gmail.com> (C, C#)
+Osiris Pedroso <opedroso@gmail.com>
+Dave Kuhlman <dkuhlman@davekuhlman.org> (Python: tornado, asyncio)
+Abel Allison <abel.allison@gmail.com> (Node.js)
 
 Errata and Suggestions
 ----------------------
@@ -117,3 +123,6 @@ Matthew Horsfall <WolfSage@gmail.com>
 Nathan Stocks
 Ondrej Kupka <ondra.cap@gmail.com>
 Sebastian Thiel <byronimo@gmail.com>
+Scott Watson
+Andriy Drozdyuk <drozzy@gmail.com>
+Mateusz Piotrowski <0mp@FreeBSD.org>
